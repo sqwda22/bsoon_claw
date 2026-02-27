@@ -1,0 +1,78 @@
+{
+  "version": 1,
+  "updated_at": "2026-02-27T06:30:00+09:00",
+  "rules": [
+    {
+      "id": "P-001",
+      "enabled": true,
+      "scope": ["external_send", "destructive_change", "system_change", "long_running"],
+      "priority": 10,
+      "when": "해당 작업이 외부발신/파괴적/시스템변경/고비용일 때",
+      "conflicts_with": [],
+      "action": "ask"
+    },
+    {
+      "id": "P-002",
+      "enabled": true,
+      "scope": ["all"],
+      "priority": 90,
+      "when": "사용자 응답 생성 시",
+      "conflicts_with": [],
+      "action": "allow"
+    },
+    {
+      "id": "P-003",
+      "enabled": true,
+      "scope": ["all"],
+      "priority": 40,
+      "when": "규칙/약속/결정 변경 발생 시",
+      "conflicts_with": [],
+      "action": "allow"
+    },
+    {
+      "id": "P-004",
+      "enabled": true,
+      "scope": ["all"],
+      "priority": 20,
+      "when": "요청 처리 시작 시",
+      "conflicts_with": [],
+      "action": "allow"
+    },
+    {
+      "id": "P-005",
+      "enabled": true,
+      "scope": ["audit_daily", "audit_weekly", "audit_monthly"],
+      "priority": 20,
+      "when": "23:50 감사 배치 실행 시",
+      "conflicts_with": [],
+      "action": "allow"
+    },
+    {
+      "id": "P-006",
+      "enabled": true,
+      "scope": ["all"],
+      "priority": 60,
+      "when": "규칙 추가/변경 제안 시",
+      "conflicts_with": [],
+      "action": "allow"
+    },
+    {
+      "id": "P-007",
+      "enabled": true,
+      "scope": ["all"],
+      "priority": 50,
+      "when": "작업 우선순위 결정 시",
+      "conflicts_with": [],
+      "action": "allow"
+    },
+    {
+      "id": "P-008",
+      "enabled": true,
+      "scope": ["audit_daily", "audit_weekly", "audit_monthly"],
+      "priority": 70,
+      "when": "감사 결과 개선안 도출 시",
+      "conflicts_with": [],
+      "action": "allow"
+    }
+  ]
+}

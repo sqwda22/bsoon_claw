@@ -1,0 +1,7 @@
+.openclaw/
+ops/logs/
+ops/audits/
+ops/state/
+memory/gmail-filters-backup-*.json
+.clawhub/
+skills/
