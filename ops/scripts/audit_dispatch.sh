@@ -12,13 +12,37 @@ RUN_LOG="$ROOT/ops/logs/runs/$TODAY.log"
 export PATH="/home/sqwda/.nvm/versions/node/v24.13.1/bin:/home/sqwda/.local/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
 LOBSTER_BIN_DEFAULT="/home/sqwda/.nvm/versions/node/v24.13.1/bin/lobster"
 
+# Policy toggle: keep Lobster paused until Phase 3 unless explicitly overridden.
+LOBSTER_PAUSED="${LOBSTER_PAUSED:-1}"
+
 mkdir -p "$(dirname "$RUN_LOG")"
 
 log() {
   echo "[$(TZ="$TZ" date '+%F %T %Z')] $*" >> "$RUN_LOG"
 }
 
+append_closing_note_template() {
+  local mem_file="$ROOT/memory/$TODAY.md"
+  mkdir -p "$ROOT/memory"
+  touch "$mem_file"
 
+  if grep -q "오늘 마감 정리 (10줄 이내)" "$mem_file"; then
+    log "[close] closing note already exists: $mem_file"
+    return 0
+  fi
+
+  cat >> "$mem_file" <<'EOF'
+
+- [23:50] 오늘 마감 정리 (10줄 이내)
+  1) 오늘 주요 작업:
+  2) 추가된 도구/스킬/변경사항:
+  3) 눈에 띈 문제나 불편함:
+  4) 내일 이어갈 것:
+  5) 개선 제안 1개:
+EOF
+
+  log "[close] appended closing note template: $mem_file"
+}
 
 run_lobster_audit_workflow() {
   local state_file="$ROOT/ops/state/lobster_audit_approval.json"
@@ -136,8 +160,14 @@ if [[ "$TOMORROW_DAY" == "01" ]]; then
   "$ROOT/ops/scripts/audit_monthly.sh" >> "$RUN_LOG" 2>&1
 fi
 
+append_closing_note_template >> "$RUN_LOG" 2>&1 || true
+
 if [[ "$DOW" == "7" ]]; then
-  run_lobster_audit_workflow >> "$RUN_LOG" 2>&1 || true
+  if [[ "$LOBSTER_PAUSED" == "1" ]]; then
+    log "[lobster] paused by policy (Phase 3 pending)"
+  else
+    run_lobster_audit_workflow >> "$RUN_LOG" 2>&1 || true
+  fi
 fi
 
 # Run commit/push after all scheduled audits finish.

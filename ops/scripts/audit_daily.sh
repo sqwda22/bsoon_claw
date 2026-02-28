@@ -26,6 +26,26 @@ done
 
 count_events=$(wc -l < "$EVENT_LOG" 2>/dev/null || echo 0)
 
+# jq 기반 이벤트 집계 (fallback: 0)
+done_c=0
+partial_c=0
+failed_c=0
+external_c=0
+scope_summary=""
+if command -v jq >/dev/null 2>&1 && [[ -s "$EVENT_LOG" ]]; then
+  done_c=$(jq -rc 'select(.result=="done")' "$EVENT_LOG" | wc -l | tr -d ' ')
+  partial_c=$(jq -rc 'select(.result=="partial")' "$EVENT_LOG" | wc -l | tr -d ' ')
+  failed_c=$(jq -rc 'select(.result=="failed")' "$EVENT_LOG" | wc -l | tr -d ' ')
+  external_c=$(jq -rc 'select(.source=="external-agent")' "$EVENT_LOG" | wc -l | tr -d ' ')
+
+  for scope in coding research ops comms creative config; do
+    sc=$(jq -rc --arg s "$scope" 'select(.scope==$s)' "$EVENT_LOG" | wc -l | tr -d ' ')
+    if [[ "$sc" -gt 0 ]]; then
+      scope_summary+="- scope=$scope: ${sc}건"$'\n'
+    fi
+  done
+fi
+
 dup_policy_ids=$(grep -oE '^### P-[0-9]+' "$ROOT/POLICY.md" 2>/dev/null | awk '{print $2}' | sort | uniq -d || true)
 dup_commit_ids=$(grep -oE '^\| C-[0-9]+' "$ROOT/COMMITMENTS.md" 2>/dev/null | awk '{print $2}' | sort | uniq -d || true)
 dup_decision_ids=$(grep -oE '^### D-[0-9]+' "$ROOT/DECISIONS.md" 2>/dev/null | awk '{print $2}' | sort | uniq -d || true)
@@ -62,6 +82,18 @@ fi
   echo
   echo "## FACT (로그/문서 근거)"
   echo "- 이벤트 로그 라인수: $count_events (근거: ops/logs/events/$TODAY.jsonl)"
+
+  if [[ "$count_events" -gt 0 ]]; then
+    echo "## 이벤트 분석"
+    echo "- 결과: done=$done_c, partial=$partial_c, failed=$failed_c"
+    echo "- 외부 에이전트 작업: $external_c"
+    if [[ -n "$scope_summary" ]]; then
+      printf "%s" "$scope_summary"
+    fi
+  else
+    echo "## 이벤트 분석: 이벤트 로그 없음"
+  fi
+
   if ((${#missing[@]}==0)); then
     echo "- 필수 문서 존재: 이상 없음 (근거: POLICY/COMMITMENTS/DECISIONS/USER 파일 검사)"
   else
@@ -78,6 +110,7 @@ fi
   else
     echo "- 누락/중복으로 인해 향후 적용 누수 가능성이 있음."
   fi
+  [[ "$failed_c" -gt 0 ]] && echo "- 실패 ${failed_c}건: 원인 패턴 분석 필요"
   echo "- 이벤트 로그가 낮은 경우(또는 0) 관측 기반 개선이 제한될 수 있음."
   echo
   echo "## ACTION (실행 항목)"
